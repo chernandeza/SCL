@@ -80,7 +80,6 @@ namespace Client
             }
             catch (Exception)
             {
-                
                 throw;
             }
         }
@@ -99,7 +98,7 @@ namespace Client
             }
             catch (Exception)
             {
-
+                MessageBox.Show("ERROR en btnGetMsg_Click");
                 throw;
             }
 

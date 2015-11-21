@@ -226,6 +226,7 @@ namespace Library
             }
             catch
             {
+                
                 Console.WriteLine("Error en envío de mensajes");
             }
  

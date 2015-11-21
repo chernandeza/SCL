@@ -24,6 +24,8 @@ namespace Library
         public event MessageReceivedEventHandler MessageReceived; //Evento se dispara cuando se recibe un mensaje
         public event EventHandler ClientDisconnected; //Evento se dispara cuando se desconecta un cliente.
 
+        private EvtLogWriter evtW = new EvtLogWriter("NetServerManager", "Application");
+
         /*Estos métodos validan que la suscripción a los eventos no esté vacía. Si está vacía, no lanza el evento de forma innecesaria*/
         virtual protected void OnClientDisconnected()
         {
@@ -166,10 +168,12 @@ namespace Library
                         case ControlMessage.CM_GetMessages:
                             Level msgLevel = (Level)Enum.Parse(typeof(Level), netDataReader.ReadByte().ToString());
                             Dictionary<int, Message> msgType = db.GetAllMessagesByType(msgLevel);
+                            
                             if (msgType.ContainsKey(-1))
                             {
                                 netDataWriter.Write((Byte)ControlMessage.CM_NoMessages);
                                 netDataWriter.Flush(); //No hay mensajes 
+                                evtW.writeInfo("No hay mensajes en la BD");
                             }
                             else 
                             {
@@ -180,11 +184,13 @@ namespace Library
                                     netDataWriter.Write(ObjSerializer.ObjectToByteArray(msgType).Length);
                                     netDataWriter.Write(ObjSerializer.ObjectToByteArray(msgType));
                                     netDataWriter.Flush();
+                                    evtW.writeInfo("Hay mensajes en la BD y se enviaron al cliente");
                                 }
                                 else
                                 {
                                     netDataWriter.Write((Byte)ControlMessage.CM_Error);
                                     netDataWriter.Flush(); //Mensaje de error al cliente
+                                    evtW.writeError("Hay errores en la BD");
                                 }
                             }
                             /*
