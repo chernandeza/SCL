@@ -163,10 +163,35 @@ namespace Library
                                 }
                             }
                             break;
+                        case ControlMessage.CM_GetMessages:
+                            Level msgLevel = (Level)Enum.Parse(typeof(Level), netDataReader.ReadByte().ToString());
+                            Dictionary<int, Message> msgType = db.GetAllMessagesByType(msgLevel);
+                            if (msgType.ContainsKey(-1))
+                            {
+                                netDataWriter.Write((Byte)ControlMessage.CM_NoMessages);
+                                netDataWriter.Flush(); //No hay mensajes 
+                            }
+                            else 
+                            {
+                                if (msgType.Count > 0)
+                                {
+                                    netDataWriter.Write((Byte)ControlMessage.CM_OK);
+                                    netDataWriter.Flush(); //Hay mensajes
+                                    netDataWriter.Write(ObjSerializer.ObjectToByteArray(msgType).Length);
+                                    netDataWriter.Write(ObjSerializer.ObjectToByteArray(msgType));
+                                    netDataWriter.Flush();
+                                }
+                                else
+                                {
+                                    netDataWriter.Write((Byte)ControlMessage.CM_Error);
+                                    netDataWriter.Flush(); //Mensaje de error al cliente
+                                }
+                            }
                             /*
                              * Si existiesen más interacciones entre el cliente y el servidor, se deberían agregar más 
                              * cases a este switch según mensajes de control existan y que se envíen desde el cliente.
                              */
+                            break;
                         default:
                             break;
                     }

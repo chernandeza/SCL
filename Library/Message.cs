@@ -63,6 +63,8 @@ namespace Library
         CM_OK,
         CM_ACK,
         CM_Error,
-        CM_Message
+        CM_Message,
+        CM_GetMessages,
+        CM_NoMessages
     };
 }

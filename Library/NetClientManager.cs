@@ -28,6 +28,8 @@ namespace Library
         public event MessageReceivedEventHandler MessageSent; //Evento lanzado al enviar un mensaje
         public event EventHandler Disconnected; //Evento lanzado al desconectarse del servidor
         public event EventHandler ServerError; //Evento lanzado al obtener un mensaje de error desde el servidor
+        public event EventHandler NoMessages; //Evento lanzado al no obtener mensajes de respuesta por tipo de mensaje
+        public event DictReceivedEventHandler MessagesReceived;
 
         /*Estos métodos validan que la suscripción a los eventos no esté vacía. Si está vacía, no lanza el evento de forma innecesaria*/
         virtual protected void OnDisconnected()
@@ -47,11 +49,23 @@ namespace Library
             if (Connected != null)
                 Connected(this, EventArgs.Empty);
         }
+
+        virtual protected void OnNoMessages()
+        {
+            if (NoMessages != null)
+                NoMessages(this, EventArgs.Empty);
+        }
         
         virtual protected void OnMessageSent(MessageEventArgs e)
         {
             if (MessageSent != null)
                 MessageSent(this, e);
+        }
+
+        virtual protected void OnMessagesReceived(DictionaryEventArgs e)
+        {
+            if (MessagesReceived != null)
+                MessagesReceived(this, e);
         }
 
         public NetClientManager()
@@ -175,6 +189,46 @@ namespace Library
             {
                 Console.WriteLine("Error en envío de mensajes");
             }
+        }
+
+        public void GetMessagesByType(Level L)
+        {
+            try
+            {
+                if (_isConnected)
+                {
+                    netDataWriter.Write((Byte)(ControlMessage.CM_GetMessages));
+                    netDataWriter.Write((Byte)(L));
+                    netDataWriter.Flush();
+
+                    ControlMessage srvAns = (ControlMessage)Enum.Parse(typeof(ControlMessage), netDataReader.ReadByte().ToString());
+
+                    switch (srvAns)
+                    {
+                        case ControlMessage.CM_OK:
+                            Dictionary<int, Message> msgReceived;
+                            int sizeOfDict = netDataReader.ReadInt32();
+                            msgReceived = (Dictionary<int, Message>)ObjSerializer.ByteArrayToObject(netDataReader.ReadBytes(sizeOfDict));
+                            DictionaryEventArgs dictEA = new DictionaryEventArgs();
+                            dictEA.Messages = msgReceived;
+                            OnMessagesReceived(dictEA);
+                            break;
+                        case ControlMessage.CM_Error:
+                            OnServerError();
+                            break;
+                        case ControlMessage.CM_NoMessages:
+                            OnNoMessages();
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+            catch
+            {
+                Console.WriteLine("Error en envío de mensajes");
+            }
+ 
         }
     }
 }

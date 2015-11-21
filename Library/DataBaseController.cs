@@ -28,8 +28,8 @@ namespace Library
         public DataBaseController()
         {
             ConnectionStr = new SqlConnectionStringBuilder();
-            ConnectionStr.DataSource = "HERNANDEZAC\\SQLEXPRESS";            
-            //ConnectionStr.DataSource = ".\\SQLEXPRESS";
+            //ConnectionStr.DataSource = "HERNANDEZAC\\SQLEXPRESS";            
+            ConnectionStr.DataSource = ".\\SQLEXPRESS";
             ConnectionStr.InitialCatalog = "830TestDB";
             ConnectionStr.UserID = "dbtest";
             ConnectionStr.Password = "P@ssw0rd";
@@ -58,6 +58,56 @@ namespace Library
             catch
             {
                 return false;
+            }
+            finally
+            {
+                SQLcmdSP.Dispose();
+                DBConnection.Close();
+            }
+        }
+        
+        /// <summary>
+        /// Obtains the list of registered providers of the system
+        /// </summary>
+        /// <returns>A dictionary with identifiers and characteristics of each provider</returns>
+        public Dictionary<int, Message> GetAllMessagesByType(Level L)
+        {
+            SqlDataReader messageReader;
+            try
+            {
+                SQLcmdSP = new SqlCommand();
+                SQLcmdSP.CommandText = "sp_ExtractMessages";
+                SQLcmdSP.CommandType = CommandType.StoredProcedure;
+                SQLcmdSP.Parameters.Add(new SqlParameter("@type", SqlDbType.NVarChar, 50));
+                SQLcmdSP.Parameters[0].Value = L.ToString();
+                SQLcmdSP.Connection = DBConnection;
+                DBConnection.Open();
+
+                messageReader = SQLcmdSP.ExecuteReader();
+                Dictionary<int, Message> ResultMessages = new Dictionary<int,Message>();
+                if (messageReader.HasRows)
+                {
+                    while (messageReader.Read())
+                    {
+                        Message msgToRead = new Message();
+                        msgToRead.Content = messageReader.GetString(1);
+                        msgToRead.Importance = (Level)Enum.Parse(typeof(Level), messageReader.GetString(2));
+                        ResultMessages.Add(messageReader.GetInt32(0), msgToRead);
+                    }
+                }
+                else
+                {
+                    ResultMessages = new Dictionary<int,Message>();//No hay mensajes
+                    ResultMessages.Add(-1, new Message());
+                    return ResultMessages;
+                }
+                messageReader.Close();
+                return ResultMessages; //Diccionario con usuarios registrados
+            }
+            catch
+            {
+                //evtLWDB.writeError("Error when getting Provider list" + Environment.NewLine + exc.Message);
+                return new Dictionary<int,Message>();
             }
             finally
             {

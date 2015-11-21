@@ -22,7 +22,19 @@ namespace Client
             netCM.Disconnected += netCM_Disconnected;
             netCM.ServerError += netCM_ServerError;
             netCM.MessageSent += netCM_MessageSent;
+            netCM.NoMessages += netCM_NoMessages;
+            netCM.MessagesReceived += netCM_MessagesReceived;
             rbBajo.Select();
+        }
+
+        void netCM_MessagesReceived(object sender, DictionaryEventArgs e)
+        {
+            dgvDataMsg.DataSource = e.Messages.Values;            
+        }
+
+        void netCM_NoMessages(object sender, EventArgs e)
+        {
+            MessageBox.Show("No hay mensajes disponibles", "Message sending application", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         void netCM_MessageSent(object sender, MessageEventArgs e)
@@ -71,6 +83,26 @@ namespace Client
                 
                 throw;
             }
+        }
+
+        private void btnGetMsg_Click(object sender, EventArgs e)
+        {
+            try
+            {
+
+                var checkedButton = mainPanel.Controls.OfType<RadioButton>()
+                                      .FirstOrDefault(r => r.Checked);
+                //Library.Message newM = new Library.Message();
+                //newM.Content = txtMensaje.Text;
+                //newM.Importance = (Level)Enum.Parse(typeof(Level), checkedButton.Text);
+                netCM.GetMessagesByType((Level)Enum.Parse(typeof(Level), checkedButton.Text));                
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
         }
     }
 }
